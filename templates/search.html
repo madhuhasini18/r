@@ -2,7 +2,6 @@
 <html>
 <head>
     <title>Search Products - ShopWise</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
@@ -12,15 +11,41 @@
 
 <hr>
 
-<h3>Customer Options</h3>
-<p>Search functionality UI can go here.</p>
+<h3>Detect Your Location</h3>
 
-<hr>
+<button onclick="getLocation()">Detect My Location</button>
 
-{% if session.role == 'shop_owner' %}
-<h3>Seller Options</h3>
-<a href="{{ url_for('owner_dashboard') }}">Sell Products</a>
-{% endif %}
+<p id="locStatus"></p>
+
+<form method="GET" action="{{ url_for('search_page') }}">
+    <input type="hidden" name="lat" id="lat">
+    <input type="hidden" name="lon" id="lon">
+
+    <input type="text" name="product" placeholder="Search product..." required>
+    <button type="submit">Search</button>
+</form>
+
+<script>
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition, showError);
+        document.getElementById("locStatus").innerText = "Detecting location...";
+    } else {
+        document.getElementById("locStatus").innerText = "Geolocation not supported.";
+    }
+}
+
+function showPosition(position) {
+    document.getElementById("lat").value = position.coords.latitude;
+    document.getElementById("lon").value = position.coords.longitude;
+    document.getElementById("locStatus").innerText =
+        "Location detected: " + position.coords.latitude + ", " + position.coords.longitude;
+}
+
+function showError(error) {
+    document.getElementById("locStatus").innerText = "Location access denied.";
+}
+</script>
 
 </body>
 </html>
