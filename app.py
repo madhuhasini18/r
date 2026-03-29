@@ -1,23 +1,26 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-import sqlite3, math, os
+import sqlite3
+import math
+import os
 
 app = Flask(__name__)
 app.secret_key = 'shopwise_geo_2026'
 DB = 'shopwise.db'
 
-# ─────────────────────────────────────────
-# DISTANCE FUNCTION
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
+# DISTANCE CALCULATION
+# ───────────────────────────────────────
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) \
+        * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
     return R * 2 * math.asin(math.sqrt(a))
 
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
 # DATABASE
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -54,16 +57,19 @@ def init_db():
         FOREIGN KEY(shop_id) REFERENCES shops(id)
     )''')
 
+    # create default admin if not exists
     c.execute("SELECT id FROM users WHERE username='admin'")
     if not c.fetchone():
-        c.execute("INSERT INTO users (username,password,role) VALUES ('admin','admin123','admin')")
+        c.execute(
+            "INSERT INTO users (username,password,role) VALUES ('admin','admin123','admin')"
+        )
 
     conn.commit()
     conn.close()
 
-# ─────────────────────────────────────────
-# HOME PAGE (FIXED)
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
+# HOME
+# ───────────────────────────────────────
 @app.route('/')
 def home():
     if session.get('username'):
@@ -76,10 +82,10 @@ def home():
 
     return redirect(url_for('login'))
 
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
 # LOGIN
-# ─────────────────────────────────────────
-@app.route('/login', methods=['GET','POST'])
+# ───────────────────────────────────────
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         conn = get_db()
@@ -90,11 +96,9 @@ def login():
         conn.close()
 
         if user:
-            session.update({
-                'user_id': user['id'],
-                'username': user['username'],
-                'role': user['role']
-            })
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['role'] = user['role']
 
             if user['role'] == 'admin':
                 return redirect(url_for('admin_dashboard'))
@@ -106,10 +110,10 @@ def login():
 
     return render_template('login.html')
 
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
 # REGISTER
-# ─────────────────────────────────────────
-@app.route('/register', methods=['GET','POST'])
+# ───────────────────────────────────────
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username'].strip()
@@ -135,30 +139,34 @@ def register():
 
             conn.close()
 
-            session.update({
-                'user_id': user['id'],
-                'username': user['username'],
-                'role': user['role']
-            })
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['role'] = user['role']
 
             if role_choice == 'shop_owner':
+                flash('Account created! Please set up your shop.', 'success')
                 return redirect(url_for('setup_shop'))
+
+            flash('Welcome to ShopWise!', 'success')
             return redirect(url_for('search_page'))
 
-        except Exception:
+        except sqlite3.IntegrityError:
             flash('Username already taken.', 'error')
 
     return render_template('register.html')
 
+# ───────────────────────────────────────
+# LOGOUT
+# ───────────────────────────────────────
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
 # SHOP SETUP
-# ─────────────────────────────────────────
-@app.route('/owner/setup', methods=['GET','POST'])
+# ───────────────────────────────────────
+@app.route('/owner/setup', methods=['GET', 'POST'])
 def setup_shop():
     if session.get('role') != 'shop_owner':
         return redirect(url_for('login'))
@@ -187,14 +195,15 @@ def setup_shop():
         conn.commit()
         conn.close()
 
+        flash('Shop created successfully!', 'success')
         return redirect(url_for('owner_dashboard'))
 
     conn.close()
     return render_template('setup_shop.html')
 
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
 # OWNER DASHBOARD
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
 @app.route('/owner')
 def owner_dashboard():
     if session.get('role') != 'shop_owner':
@@ -206,18 +215,21 @@ def owner_dashboard():
         (session['user_id'],)
     ).fetchone()
 
+    if not shop:
+        conn.close()
+        return redirect(url_for('setup_shop'))
+
     products = conn.execute(
         "SELECT * FROM products WHERE shop_id=?",
         (shop['id'],)
     ).fetchall()
 
     conn.close()
-
     return render_template('owner_dashboard.html', shop=shop, products=products)
 
-# ─────────────────────────────────────────
-# CUSTOMER SEARCH
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
+# SEARCH PAGE
+# ───────────────────────────────────────
 @app.route('/search')
 def search_page():
     if not session.get('username'):
@@ -231,9 +243,9 @@ def search_page():
 
     return render_template('search.html', categories=categories)
 
-# ─────────────────────────────────────────
-# ADMIN
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
+# ADMIN DASHBOARD
+# ───────────────────────────────────────
 @app.route('/admin')
 def admin_dashboard():
     if session.get('role') != 'admin':
@@ -244,12 +256,21 @@ def admin_dashboard():
     shops = conn.execute("SELECT * FROM shops").fetchall()
     conn.close()
 
-    return render_template('admin_dashboard.html', users=users, shops=shops)
+    return render_template(
+        'admin_dashboard.html',
+        users=users,
+        shops=shops
+    )
 
-# ─────────────────────────────────────────
-# RUN APP
-# ─────────────────────────────────────────
+# ───────────────────────────────────────
+# START APP
+# ───────────────────────────────────────
 if __name__ == '__main__':
+    # Reset database on every deploy (for testing)
+    if os.path.exists(DB):
+        os.remove(DB)
+
     init_db()
+
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
