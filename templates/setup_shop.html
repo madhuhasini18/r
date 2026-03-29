@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Set Up Your Shop – ShopWise{% endblock %}
+{% block content %}
+<div class="form-card" style="max-width:560px;">
+  <div style="text-align:center;margin-bottom:1.5rem;">
+    <div style="font-size:3rem;">🏪</div>
+    <h2 style="margin:.4rem 0 .3rem;">Set Up Your Shop</h2>
+    <p style="color:var(--muted);font-size:.88rem;">Tell customers where to find you. You can edit this later.</p>
+  </div>
+
+  <form method="POST">
+    <!-- Step 1: Shop Info -->
+    <div style="background:#f8f6f2;border-radius:10px;padding:1.2rem 1.3rem;margin-bottom:1.2rem;border:1px solid var(--border);">
+      <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:1rem;">
+        🏪 Shop Details
+      </p>
+      <div class="field-group">
+        <label>Shop Name <span style="color:red">*</span></label>
+        <input type="text" name="shop_name" placeholder="e.g. Fresh Mart Kondapur" required/>
+      </div>
+      <div class="field-group">
+        <label>Area / Neighbourhood</label>
+        <input type="text" name="area" placeholder="e.g. Kondapur"/>
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <label>Full Address <span style="color:red">*</span></label>
+        <input type="text" name="address" placeholder="e.g. 12-3 Main Road, Kondapur, Hyderabad" required/>
+      </div>
+    </div>
+
+    <!-- Step 2: Location -->
+    <div style="background:#f8f6f2;border-radius:10px;padding:1.2rem 1.3rem;margin-bottom:1.2rem;border:1px solid var(--border);">
+      <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:1rem;">
+        📍 Shop Location
+      </p>
+
+      <div style="display:flex;gap:.6rem;margin-bottom:.8rem;align-items:flex-end;">
+        <div class="field-group" style="flex:1;margin-bottom:0;">
+          <label>Search Address</label>
+          <input type="text" id="locSearch" placeholder="Type your shop address…" oninput="geocodeShop(this.value)"/>
+        </div>
+        <button type="button" class="detect-btn" id="detectBtn" onclick="detectGPS()" style="margin-bottom:0;">
+          📡 GPS
+        </button>
+      </div>
+
+      <div id="coordHint" style="display:none;font-size:.8rem;color:green;margin-bottom:.7rem;"></div>
+
+      <div style="display:flex;gap:.7rem;">
+        <div class="field-group" style="flex:1;margin-bottom:0;">
+          <label>Latitude <span style="color:red">*</span></label>
+          <input type="number" step="any" name="lat" id="lat" placeholder="e.g. 17.4700" required/>
+        </div>
+        <div class="field-group" style="flex:1;margin-bottom:0;">
+          <label>Longitude <span style="color:red">*</span></label>
+          <input type="number" step="any" name="lon" id="lon" placeholder="e.g. 78.3600" required/>
+        </div>
+      </div>
+
+      <div style="margin-top:.8rem;">
+        <p style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;">Quick fill — common Hyderabad areas:</p>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillCoords(17.4956,78.3694,'Miyapur')">Miyapur</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillCoords(17.4870,78.3911,'KPHB')">KPHB</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillCoords(17.4849,78.4138,'Kukatpally')">Kukatpally</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillCoords(17.4700,78.3600,'Kondapur')">Kondapur</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillCoords(17.4374,78.4487,'Ameerpet')">Ameerpet</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillCoords(17.4401,78.3489,'Gachibowli')">Gachibowli</button>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width:100%;font-size:1rem;padding:.85rem;">
+      🚀 Launch My Shop →
+    </button>
+  </form>
+</div>
+
+<script>
+function fillCoords(lat, lon, name) {
+  document.getElementById('lat').value = lat;
+  document.getElementById('lon').value = lon;
+  const hint = document.getElementById('coordHint');
+  hint.style.display = 'block';
+  hint.textContent = '✅ Location set to ' + name;
+}
+
+function detectGPS() {
+  const btn = document.getElementById('detectBtn');
+  if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
+  btn.textContent = '⏳…';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fillCoords(pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6), 'Current GPS location');
+      btn.textContent = '✅ Done';
+    },
+    () => { alert('Could not detect location.'); btn.textContent = '📡 GPS'; },
+    { timeout: 8000 }
+  );
+}
+
+let geoTimer;
+function geocodeShop(val) {
+  clearTimeout(geoTimer);
+  if (val.length < 5) return;
+  geoTimer = setTimeout(() => {
+    fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&limit=1`)
+      .then(r => r.json())
+      .then(data => {
+        if (data && data[0]) {
+          fillCoords(parseFloat(data[0].lat).toFixed(6), parseFloat(data[0].lon).toFixed(6),
+                     data[0].display_name.split(',').slice(0,2).join(','));
+        }
+      }).catch(() => {});
+  }, 800);
+}
+</script>
+{% endblock %}

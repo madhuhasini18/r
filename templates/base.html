@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>{% block title %}ShopWise{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+<nav class="navbar">
+  <a class="brand" href="/">🛒 ShopWise</a>
+  <div class="nav-links">
+    {% if session.role == 'customer' %}
+      <a href="/search">🔍 Search</a>
+    {% elif session.role == 'shop_owner' %}
+      <a href="/owner">🏪 My Shop</a>
+      <a href="/owner/add">+ Product</a>
+      <a href="/owner/edit_shop">⚙️ Shop Settings</a>
+    {% elif session.role == 'admin' %}
+      <a href="/admin">🛡️ Admin</a>
+      <a href="/search">🔍 Search</a>
+    {% endif %}
+    {% if session.username %}
+      <span class="user-pill">👤 {{ session.username }}</span>
+      <a class="btn-nav" href="/logout">Logout</a>
+    {% else %}
+      <a class="btn-nav" href="/login">Login</a>
+      <a class="btn-nav ghost" href="/register">Register</a>
+    {% endif %}
+  </div>
+</nav>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  <p>© 2026 ShopWise · CVR College of Engineering · CSE(DS) · B.Tech II Year</p>
+</footer>
+</body>
+</html>

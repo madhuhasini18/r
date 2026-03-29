@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Results – ShopWise{% endblock %}
+{% block content %}
+
+<div class="results-header">
+  <div class="inner">
+    <h1>
+      {% if query %}Results for "{{ query }}"{% else %}All Products{% endif %}
+    </h1>
+    <div class="meta">
+      📍 Searching within <strong>{{ radius }} km</strong> of your location
+      &nbsp;·&nbsp; {{ total_nearby }} shop(s) found nearby
+    </div>
+    <div class="badges">
+      {% if total_nearby > 0 %}
+        <span class="badge green">✅ {{ total_nearby }} shops in range</span>
+      {% else %}
+        <span class="badge red">⚠️ No shops within {{ radius }} km</span>
+      {% endif %}
+      {% if grouped %}
+        <span class="badge">{{ grouped|length }} product(s) found</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="results-wrap">
+
+  <!-- Re-search bar -->
+  <form class="re-search" action="/results" method="GET">
+    <input type="hidden" name="lat" value="{{ user_lat }}"/>
+    <input type="hidden" name="lon" value="{{ user_lon }}"/>
+    <input type="text" name="q" value="{{ query }}" placeholder="Search again…"/>
+    <select name="category">
+      <option value="">All Categories</option>
+      {% for cat in ['Groceries','Dairy','Oils','Pulses','Personal Care','Beverages','Snacks'] %}
+        <option value="{{ cat }}" {{ 'selected' if category==cat }}>{{ cat }}</option>
+      {% endfor %}
+    </select>
+    <select name="radius">
+      <option value="2"  {{ 'selected' if radius==2  }}>2 km</option>
+      <option value="5"  {{ 'selected' if radius==5  }}>5 km</option>
+      <option value="10" {{ 'selected' if radius==10 }}>10 km</option>
+      <option value="20" {{ 'selected' if radius==20 }}>20 km</option>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    <a href="/search" class="btn btn-secondary btn-sm">← New Search</a>
+  </form>
+
+  {% if grouped %}
+    {% for pname, stores in grouped.items() %}
+
+      {# Find best price among in-stock entries #}
+      {% set in_stock = stores | selectattr('availability','equalto',1) | list %}
+      {% if in_stock %}
+        {% set min_price = in_stock | map(attribute='price') | list | min %}
+      {% else %}
+        {% set min_price = None %}
+      {% endif %}
+      {# Closest shop #}
+      {% set min_dist = stores | map(attribute='distance') | list | min %}
+
+      <div class="product-block">
+        <div class="product-head">
+          <span class="pname">🛍️ {{ pname }}</span>
+          <span class="pcount">{{ stores|length }} shop(s) nearby</span>
+        </div>
+        <div class="compare-table-wrap">
+          <table class="ct">
+            <thead>
+              <tr>
+                <th>Shop</th>
+                <th>Area</th>
+                <th>Distance</th>
+                <th>Price (₹)</th>
+                <th>Stock</th>
+                <th>Tag</th>
+              </tr>
+            </thead>
+            <tbody>
+              {# Sort by distance #}
+              {% for s in stores | sort(attribute='distance') %}
+              <tr>
+                <td>
+                  <strong>{{ s.shop_name }}</strong><br/>
+                  <span style="font-size:.78rem;color:var(--muted);">{{ s.address }}</span>
+                </td>
+                <td>{{ s.area }}</td>
+                <td>
+                  <span class="dist-chip">
+                    📍 {{ s.distance }} km
+                    {% if s.distance == min_dist %}
+                      <span style="color:var(--gold);font-size:.72rem;">nearest</span>
+                    {% endif %}
+                  </span>
+                </td>
+                <td class="{{ 'price-best' if (min_price and s.price == min_price and s.availability) else '' }}">
+                  ₹{{ '%.2f' | format(s.price) }}
+                </td>
+                <td>
+                  {% if s.availability %}
+                    <span class="pill pill-in">✅ In Stock</span>
+                  {% else %}
+                    <span class="pill pill-out">❌ Out of Stock</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if min_price and s.price == min_price and s.availability %}
+                    <span class="pill pill-best">🏆 Best Deal</span>
+                  {% elif s.distance == min_dist %}
+                    <span class="pill pill-near">📍 Nearest</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    {% endfor %}
+
+  {% else %}
+    <div class="no-results">
+      <div class="icon">🔎</div>
+      <h3>No results found</h3>
+      {% if total_nearby == 0 %}
+        <p>No shops found within <strong>{{ radius }} km</strong>. Try increasing the radius.</p>
+      {% else %}
+        <p>No matching products in the {{ total_nearby }} nearby shop(s). Try a different search term.</p>
+      {% endif %}
+      <br/>
+      <a href="/search" class="btn btn-primary">← Back to Search</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Search Products – ShopWise{% endblock %}
+{% block content %}
+
+<div class="search-wrapper">
+  <div class="search-card">
+    <h2>🔍 Find Best Prices Near You</h2>
+    <p class="sub">Enter your location and product to compare prices across nearby shops.</p>
+
+    <form action="/results" method="GET" id="searchForm">
+
+      <!-- ── STEP 1: LOCATION ── -->
+      <div style="background:#f8f6f2;border-radius:10px;padding:1.2rem 1.3rem;margin-bottom:1.5rem;border:1px solid var(--border);">
+        <p style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:1rem;">
+          📍 Step 1 — Your Location
+        </p>
+
+        <div class="loc-row">
+          <div class="field-group">
+            <label>Location / Area Name</label>
+            <input type="text" id="locationName" placeholder="e.g. Miyapur, Hyderabad"
+                   oninput="geocodeAddress(this.value)"/>
+          </div>
+          <button type="button" class="detect-btn" id="detectBtn" onclick="detectLocation()">
+            📡 Detect
+          </button>
+        </div>
+
+        <p class="coord-hint" id="coordHint">✅ Location detected!</p>
+
+        <!-- Hidden lat/lon sent to server -->
+        <div style="display:flex;gap:.7rem;margin-top:.8rem;">
+          <div class="field-group" style="flex:1;margin-bottom:0;">
+            <label>Latitude</label>
+            <input type="number" step="any" name="lat" id="lat"
+                   placeholder="e.g. 17.4956" required/>
+          </div>
+          <div class="field-group" style="flex:1;margin-bottom:0;">
+            <label>Longitude</label>
+            <input type="number" step="any" name="lon" id="lon"
+                   placeholder="e.g. 78.3694" required/>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: PRODUCT ── -->
+      <div style="background:#f8f6f2;border-radius:10px;padding:1.2rem 1.3rem;margin-bottom:1.5rem;border:1px solid var(--border);">
+        <p style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:1rem;">
+          🛍️ Step 2 — Product
+        </p>
+        <div class="field-group" style="margin-bottom:.8rem;">
+          <label>Product Name</label>
+          <input type="text" name="q" placeholder="e.g. Rice, Milk, Sugar…" autocomplete="off"/>
+        </div>
+        <div class="radius-row">
+          <div class="field-group" style="margin-bottom:0;">
+            <label>Category (optional)</label>
+            <select name="category">
+              <option value="">All Categories</option>
+              {% for cat in categories %}
+                <option value="{{ cat['category'] }}">{{ cat['category'] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-group" style="margin-bottom:0;">
+            <label>Search Radius</label>
+            <select name="radius">
+              <option value="2">2 km</option>
+              <option value="5" selected>5 km</option>
+              <option value="10">10 km</option>
+              <option value="20">20 km</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;font-size:1rem;padding:.85rem;">
+        🔍 Search Nearby Shops
+      </button>
+    </form>
+
+    <!-- Quick area presets for demo -->
+    <hr class="divider" style="margin-top:1.5rem;"/>
+    <p style="font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:.7rem;">
+      Quick fill — click an area:
+    </p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="setCoords(17.4956,78.3694,'Miyapur')">Miyapur</button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="setCoords(17.4870,78.3911,'KPHB')">KPHB</button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="setCoords(17.4849,78.4138,'Kukatpally')">Kukatpally</button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="setCoords(17.4700,78.3600,'Kondapur')">Kondapur</button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="setCoords(17.4374,78.4487,'Ameerpet')">Ameerpet</button>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="setCoords(17.4401,78.3489,'Gachibowli')">Gachibowli</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function setCoords(lat, lon, name) {
+  document.getElementById('lat').value = lat;
+  document.getElementById('lon').value = lon;
+  document.getElementById('locationName').value = name + ', Hyderabad';
+  document.getElementById('coordHint').style.display = 'block';
+  document.getElementById('coordHint').textContent = '✅ Location set to ' + name;
+}
+
+function detectLocation() {
+  const btn = document.getElementById('detectBtn');
+  if (!navigator.geolocation) {
+    alert('Geolocation not supported by your browser.');
+    return;
+  }
+  btn.textContent = '⏳ Detecting…';
+  btn.classList.add('loading');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lon = pos.coords.longitude.toFixed(6);
+      document.getElementById('lat').value = lat;
+      document.getElementById('lon').value = lon;
+      document.getElementById('coordHint').style.display = 'block';
+      document.getElementById('coordHint').textContent = '✅ GPS detected: ' + lat + ', ' + lon;
+      document.getElementById('locationName').value = 'Current Location';
+      btn.textContent = '✅ Detected';
+      btn.classList.remove('loading');
+    },
+    (err) => {
+      alert('Could not detect location. Please enter coordinates manually or use a quick-fill button.');
+      btn.textContent = '📡 Detect';
+      btn.classList.remove('loading');
+    },
+    { timeout: 8000 }
+  );
+}
+
+// Simple geocode attempt using nominatim (open, no key needed)
+let geocodeTimer;
+function geocodeAddress(val) {
+  clearTimeout(geocodeTimer);
+  if (val.length < 4) return;
+  geocodeTimer = setTimeout(() => {
+    fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&limit=1`)
+      .then(r => r.json())
+      .then(data => {
+        if (data && data[0]) {
+          document.getElementById('lat').value = parseFloat(data[0].lat).toFixed(6);
+          document.getElementById('lon').value = parseFloat(data[0].lon).toFixed(6);
+          document.getElementById('coordHint').style.display = 'block';
+          document.getElementById('coordHint').textContent = '✅ Found: ' + data[0].display_name.split(',').slice(0,2).join(',');
+        }
+      }).catch(() => {});
+  }, 800);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Edit Product – ShopWise{% endblock %}
+{% block content %}
+<div class="form-card" style="max-width:520px;">
+  <h2>✏️ Edit Product</h2>
+  <form method="POST">
+    <div class="field-group"><label>Product Name</label>
+      <input type="text" name="name" value="{{ product.name }}" required/></div>
+    <div class="field-group"><label>Category</label>
+      <select name="category" required>
+        {% for c in ['Groceries','Dairy','Oils','Pulses','Personal Care','Beverages','Snacks','Other'] %}
+          <option value="{{ c }}" {{ 'selected' if product.category==c }}>{{ c }}</option>{% endfor %}
+      </select></div>
+    <div class="field-group"><label>Price (₹)</label>
+      <input type="number" step="0.01" name="price" value="{{ product.price }}" required/></div>
+    <div class="field-group"><label>Availability</label>
+      <select name="availability">
+        <option value="1" {{ 'selected' if product.availability==1 }}>✅ In Stock</option>
+        <option value="0" {{ 'selected' if product.availability==0 }}>❌ Out of Stock</option>
+      </select></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.4rem;">Update</button>
+  </form>
+  <p class="form-hint"><a href="/owner">← Back</a></p>
+</div>
+{% endblock %}

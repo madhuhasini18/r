@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}ShopWise – Intelligent Price Scout{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <h1>Find the <em>Best Price</em><br/>Near You</h1>
+  <p>Enter your location, search any product — we show every shop within 5 km with prices and distance.</p>
+  <div class="hero-btns">
+    <a href="/register" class="btn btn-primary">🚀 Get Started Free</a>
+    <a href="/login" class="btn btn-gold">Login</a>
+  </div>
+</section>
+
+<div style="max-width:1000px;margin:3rem auto;padding:0 1.5rem;">
+  <h2 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;margin-bottom:1.2rem;text-align:center;">How it works</h2>
+  <div class="cards-grid">
+    <div class="card"><div class="card-icon">🔐</div><h3>1. Login</h3><p>Create a free account or log in to access the price scout.</p></div>
+    <div class="card"><div class="card-icon">📍</div><h3>2. Set Location</h3><p>Enter your address or click "Detect Location" to auto-fill your coordinates.</p></div>
+    <div class="card"><div class="card-icon">🔍</div><h3>3. Search Product</h3><p>Type any product like "Rice" or "Milk" and hit search.</p></div>
+    <div class="card"><div class="card-icon">🏆</div><h3>4. Compare & Save</h3><p>See all shops within 5 km, their prices, distance, and the best deal — highlighted.</p></div>
+  </div>
+</div>
+
+{% endblock %}
