@@ -1,51 +1,29 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Setup Shop</title>
-</head>
 <body>
+<h2>Setup Shop</h2>
 
-<h2>Create Your Shop</h2>
+<form method="POST">
+<input name="shop_name" placeholder="Shop name" required><br>
+<input name="area" placeholder="Area" required><br>
+<input name="address" placeholder="Address" required><br>
 
-<form method="POST" action="{{ url_for('setup_shop') }}">
-    <input type="text" name="shop_name" placeholder="Shop Name" required><br><br>
-    <input type="text" name="area" placeholder="Area" required><br><br>
-    <input type="text" name="address" placeholder="Address" required><br><br>
+<input type="hidden" name="lat" id="lat">
+<input type="hidden" name="lon" id="lon">
 
-    <!-- Hidden GPS fields -->
-    <input type="hidden" name="lat" id="lat">
-    <input type="hidden" name="lon" id="lon">
-
-    <button type="submit">Create Shop</button>
+<button type="submit">Create Shop</button>
 </form>
 
-<button onclick="getLocation()">Detect My Location</button>
-
-<p id="locationStatus"></p>
+<button onclick="getLocation()">Detect Location</button>
 
 <script>
-function getLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition, showError);
-        document.getElementById("locationStatus").innerText = "Detecting location...";
-    } else {
-        document.getElementById("locationStatus").innerText = "Geolocation not supported.";
-    }
-}
-
-function showPosition(position) {
-    document.getElementById("lat").value = position.coords.latitude;
-    document.getElementById("lon").value = position.coords.longitude;
-    document.getElementById("locationStatus").innerText =
-        "Location detected: " + position.coords.latitude + ", " + position.coords.longitude;
-}
-
-function showError(error) {
-    document.getElementById("locationStatus").innerText = "Location access denied.";
+function getLocation(){
+navigator.geolocation.getCurrentPosition(function(pos){
+document.getElementById("lat").value=pos.coords.latitude;
+document.getElementById("lon").value=pos.coords.longitude;
+});
 }
 </script>
-
-<a href="{{ url_for('logout') }}">Logout</a>
 
 </body>
 </html>
