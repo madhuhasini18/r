@@ -1,82 +1,37 @@
-{% extends "base.html" %}
-{% block title %}Register – ShopWise{% endblock %}
-{% block content %}
-<div class="form-card">
-  <h2>🆕 Create Account</h2>
-  <p class="form-hint" style="margin-bottom:1.2rem;">Join ShopWise as a buyer or seller.</p>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register - ShopWise</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
 
-  <form method="POST">
-    <div class="field-group">
-      <label>Username</label>
-      <input type="text" name="username" placeholder="Choose a username" required/>
-    </div>
-    <div class="field-group">
-      <label>Password</label>
-      <input type="password" name="password" placeholder="Choose a password" required/>
-    </div>
+<h2>Register</h2>
 
-    <!-- Role Selection -->
-    <div class="field-group">
-      <label>I am a…</label>
-      <div class="role-cards" id="roleCards">
-        <label class="role-card" id="card-buyer">
-          <input type="radio" name="role_choice" value="customer" checked onchange="selectRole('buyer')"/>
-          <div class="role-icon">🛒</div>
-          <div class="role-label">Buyer</div>
-          <div class="role-desc">Browse and compare prices near me</div>
-        </label>
-        <label class="role-card" id="card-seller">
-          <input type="radio" name="role_choice" value="shop_owner" onchange="selectRole('seller')"/>
-          <div class="role-icon">🏪</div>
-          <div class="role-label">Seller</div>
-          <div class="role-desc">List my shop and manage products</div>
-        </label>
-      </div>
-    </div>
+<form method="POST" action="{{ url_for('register') }}">
+    <input type="text" name="username" placeholder="Username" required><br><br>
+    <input type="password" name="password" placeholder="Password" required><br><br>
 
-    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.6rem;">
-      Create Account →
-    </button>
-  </form>
-  <p class="form-hint" style="margin-top:1rem;">Already have an account? <a href="/login">Login</a></p>
-</div>
+    <label>Select Role:</label><br>
+    <select name="role">
+        <option value="customer">Customer</option>
+        <option value="shop_owner">Shop Owner</option>
+    </select><br><br>
 
-<style>
-.role-cards {
-  display: flex;
-  gap: .8rem;
-  margin-top: .4rem;
-}
-.role-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 1rem .8rem;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all .18s ease;
-  background: var(--surface);
-}
-.role-card input[type="radio"] { display: none; }
-.role-card .role-icon { font-size: 2rem; margin-bottom: .3rem; }
-.role-card .role-label { font-weight: 700; font-size: .95rem; color: var(--text); }
-.role-card .role-desc  { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
-.role-card.selected {
-  border-color: var(--accent);
-  background: #fff8f0;
-  box-shadow: 0 0 0 3px rgba(255,140,0,.15);
-}
-</style>
+    <button type="submit">Register</button>
+</form>
 
-<script>
-function selectRole(which) {
-  document.getElementById('card-buyer').classList.toggle('selected',  which === 'buyer');
-  document.getElementById('card-seller').classList.toggle('selected', which === 'seller');
-}
-// Default highlight
-selectRole('buyer');
-</script>
-{% endblock %}
+<a href="{{ url_for('login') }}">Back to Login</a>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul>
+{% for msg in messages %}
+<li>{{ msg }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
+</body>
+</html>
