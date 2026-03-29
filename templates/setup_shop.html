@@ -12,8 +12,38 @@
     <input type="text" name="area" placeholder="Area" required><br><br>
     <input type="text" name="address" placeholder="Address" required><br><br>
 
+    <!-- Hidden GPS fields -->
+    <input type="hidden" name="lat" id="lat">
+    <input type="hidden" name="lon" id="lon">
+
     <button type="submit">Create Shop</button>
 </form>
+
+<button onclick="getLocation()">Detect My Location</button>
+
+<p id="locationStatus"></p>
+
+<script>
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition, showError);
+        document.getElementById("locationStatus").innerText = "Detecting location...";
+    } else {
+        document.getElementById("locationStatus").innerText = "Geolocation not supported.";
+    }
+}
+
+function showPosition(position) {
+    document.getElementById("lat").value = position.coords.latitude;
+    document.getElementById("lon").value = position.coords.longitude;
+    document.getElementById("locationStatus").innerText =
+        "Location detected: " + position.coords.latitude + ", " + position.coords.longitude;
+}
+
+function showError(error) {
+    document.getElementById("locationStatus").innerText = "Location access denied.";
+}
+</script>
 
 <a href="{{ url_for('logout') }}">Logout</a>
 
