@@ -1,51 +1,34 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Search Products - ShopWise</title>
-</head>
 <body>
-
 <h2>Welcome {{ session.username }}</h2>
+<a href="/logout">Logout</a>
 
-<a href="{{ url_for('logout') }}">Logout</a>
+<button onclick="getLocation()">Detect Location</button>
+<p id="status"></p>
 
-<hr>
-
-<h3>Detect Your Location</h3>
-
-<button onclick="getLocation()">Detect My Location</button>
-
-<p id="locStatus"></p>
-
-<form method="GET" action="{{ url_for('search_page') }}">
-    <input type="hidden" name="lat" id="lat">
-    <input type="hidden" name="lon" id="lon">
-
-    <input type="text" name="product" placeholder="Search product..." required>
-    <button type="submit">Search</button>
+<form>
+<input type="hidden" name="lat" id="lat">
+<input type="hidden" name="lon" id="lon">
+<input name="product" placeholder="Search product">
+<button type="submit">Search</button>
 </form>
 
+{% if results %}
+<ul>
+{% for r in results %}
+<li>{{ r.name }} - ₹{{ r.price }} - {{ r.shop }} ({{ r.distance }} km)</li>
+{% endfor %}
+</ul>
+{% endif %}
+
 <script>
-function getLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition, showError);
-        document.getElementById("locStatus").innerText = "Detecting location...";
-    } else {
-        document.getElementById("locStatus").innerText = "Geolocation not supported.";
-    }
-}
-
-function showPosition(position) {
-    document.getElementById("lat").value = position.coords.latitude;
-    document.getElementById("lon").value = position.coords.longitude;
-    document.getElementById("locStatus").innerText =
-        "Location detected: " + position.coords.latitude + ", " + position.coords.longitude;
-}
-
-function showError(error) {
-    document.getElementById("locStatus").innerText = "Location access denied.";
+function getLocation(){
+navigator.geolocation.getCurrentPosition(function(pos){
+document.getElementById("lat").value=pos.coords.latitude;
+document.getElementById("lon").value=pos.coords.longitude;
+});
 }
 </script>
-
 </body>
 </html>
