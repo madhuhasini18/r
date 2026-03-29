@@ -1,20 +1,22 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import math
-import os
 
 app = Flask(__name__)
 app.secret_key = 'shopwise_secret'
 DB = 'shopwise.db'
 
 # -------------------------
-# Database helpers
+# Database connection
 # -------------------------
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
 
+# -------------------------
+# Database initialization
+# -------------------------
 def init_db():
     conn = get_db()
     c = conn.cursor()
@@ -57,17 +59,25 @@ def init_db():
 init_db()
 
 # -------------------------
+# Distance calculation
+# -------------------------
+def haversine(lat1, lon1, lat2, lon2):
+    if not lat1 or not lat2:
+        return None
+    R = 6371
+    dlat = math.radians(float(lat2) - float(lat1))
+    dlon = math.radians(float(lon2) - float(lon1))
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(float(lat1))) * math.cos(math.radians(float(lat2))) * math.sin(dlon/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+# -------------------------
 # Home
 # -------------------------
 @app.route('/')
 def home():
-    if session.get('role') == 'admin':
-        return redirect(url_for('admin_dashboard'))
-    if session.get('role') == 'shop_owner':
-        return redirect(url_for('owner_dashboard'))
-    if session.get('username'):
-        return redirect(url_for('search_page'))
-    return redirect(url_for('login'))
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return redirect(url_for('search_page'))
 
 # -------------------------
 # Register
@@ -75,21 +85,21 @@ def home():
 @app.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        role = request.form['role']
-
         try:
             conn = get_db()
             conn.execute(
                 "INSERT INTO users(username,password,role) VALUES(?,?,?)",
-                (username, password, role)
+                (
+                    request.form['username'],
+                    request.form['password'],
+                    request.form['role']
+                )
             )
             conn.commit()
             conn.close()
-            flash("Registration successful. Please login.")
+            flash("Registration successful")
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
+        except:
             flash("Username already exists")
 
     return render_template('register.html')
@@ -126,13 +136,43 @@ def logout():
     return redirect(url_for('login'))
 
 # -------------------------
-# Customer search page
+# Customer search
 # -------------------------
 @app.route('/search')
 def search_page():
-    if not session.get('username'):
+    if 'username' not in session:
         return redirect(url_for('login'))
-    return render_template('search.html')
+
+    product = request.args.get('product')
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+
+    conn = get_db()
+
+    if product:
+        results = conn.execute("""
+        SELECT p.name, p.price, s.name AS shop, s.lat, s.lon
+        FROM products p
+        JOIN shops s ON p.shop_id = s.id
+        WHERE p.name LIKE ?
+        """, ('%' + product + '%',)).fetchall()
+
+        enriched = []
+        for r in results:
+            dist = haversine(lat, lon, r['lat'], r['lon'])
+            enriched.append({
+                'name': r['name'],
+                'price': r['price'],
+                'shop': r['shop'],
+                'distance': round(dist,2) if dist else None
+            })
+
+        enriched.sort(key=lambda x: (x['distance'] is None, x['distance']))
+    else:
+        enriched = []
+
+    conn.close()
+    return render_template('search.html', results=enriched)
 
 # -------------------------
 # Seller dashboard
@@ -192,9 +232,6 @@ def setup_shop():
 # -------------------------
 @app.route('/owner/add_product', methods=['POST'])
 def add_product():
-    if session.get('role') != 'shop_owner':
-        return redirect(url_for('login'))
-
     conn = get_db()
     shop = conn.execute(
         "SELECT id FROM shops WHERE owner_id=?",
@@ -216,22 +253,7 @@ def add_product():
     return redirect(url_for('owner_dashboard'))
 
 # -------------------------
-# Admin dashboard
-# -------------------------
-@app.route('/admin')
-def admin_dashboard():
-    if session.get('role') != 'admin':
-        return redirect(url_for('login'))
-
-    conn = get_db()
-    users = conn.execute("SELECT * FROM users").fetchall()
-    shops = conn.execute("SELECT * FROM shops").fetchall()
-    conn.close()
-
-    return render_template('admin_dashboard.html', users=users, shops=shops)
-
-# -------------------------
-# Run local
+# Run locally
 # -------------------------
 if __name__ == '__main__':
     app.run(debug=True)
