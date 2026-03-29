@@ -58,7 +58,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# create tables when app starts
+# create tables if not exist (does NOT delete data)
 init_db()
 
 @app.route('/')
@@ -68,10 +68,13 @@ def home():
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
         conn = get_db()
         user = conn.execute(
             "SELECT * FROM users WHERE username=? AND password=?",
-            (request.form['username'], request.form['password'])
+            (username, password)
         ).fetchone()
         conn.close()
 
@@ -79,8 +82,8 @@ def login():
             session['user_id'] = user['id']
             session['username'] = user['username']
             return redirect(url_for('search_page'))
-
-        flash("Invalid username or password")
+        else:
+            flash("Invalid username or password")
 
     return render_template('login.html')
 
@@ -95,12 +98,17 @@ def register():
             )
             conn.commit()
             conn.close()
-            flash("Registration successful")
+            flash("Registration successful. Please login.")
             return redirect(url_for('login'))
         except sqlite3.IntegrityError:
             flash("Username already taken")
 
     return render_template('register.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.route('/search')
 def search_page():
